@@ -15,6 +15,7 @@ namespace IP
 
         Thread myThread = null;
         Socket serverSocket = null;
+        int i = 0;
 
         public bool getmyThreadOn(){
             return myThread.ThreadState == ThreadState.Running;
