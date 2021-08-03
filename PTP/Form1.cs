@@ -20,7 +20,7 @@ namespace IP
             DuanKou.isop = false;
             new Thread(() =>
             {
-                new TcpClient("127.0.0.1", 80);
+                new TcpClient(textBox1.Text == "0.0.0.0" ? "127.0.0.1" : textBox1.Text, int.Parse(textBox3.Text));
             }).Start();
         }
 

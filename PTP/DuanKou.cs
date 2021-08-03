@@ -13,6 +13,7 @@ namespace IP
     {
         static public volatile bool isop = true;
 
+        SynchronizationContext syncContext = null;
         Thread myThread = null;
         Socket serverSocket = null;
         int i = 0;
@@ -26,6 +27,7 @@ namespace IP
         int TargetPort { get; set; }
         string TargetIp { get; set; }
         public DuanKou(string localIp, int localProt, string TargetIp, int TargetPort){
+            syncContext = SynchronizationContext.Current;
             this.localIp = localIp;
             this.localProt = localProt;
             this.TargetIp = TargetIp;
@@ -46,26 +48,45 @@ namespace IP
         private void Listen(object obj){
             Socket serverSocket = (Socket)obj;
             IPAddress ip = IPAddress.Parse(TargetIp);
-            while (isop){
+            while (true){
                 Socket tcp1 = serverSocket.Accept();
                 Socket tcp2 = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
                 tcp2.Connect(new IPEndPoint(ip, TargetPort));
 
-                ThreadPool.QueueUserWorkItem(new WaitCallback(SwapMsg), new thSock{
-                    tcp1 = tcp2,
-                    tcp2 = tcp1
-                });
+                try
+                {
+                    ThreadPool.QueueUserWorkItem(new WaitCallback(SwapMsg), new thSock
+                    {
+                        tcp1 = tcp2,
+                        tcp2 = tcp1
+                    }) ;
 
-                ThreadPool.QueueUserWorkItem(new WaitCallback(SwapMsg), new thSock{
-                    tcp1 = tcp1,
-                    tcp2 = tcp2
-                });
+                    ThreadPool.QueueUserWorkItem(new WaitCallback(SwapMsg), new thSock
+                    {
+                        tcp1 = tcp1,
+                        tcp2 = tcp2
+                    });
+                    if(isop == false)
+                    {
+                        throw new  NotSupportedException("");
+                    }
+                }
+                catch
+                {
+                    break;
+                }
             }
         }
 
         public void SwapMsg(object obj){
             thSock mSocket = (thSock)obj;
             while (true) {
+                if(isop == false)
+                {
+                    if (mSocket.tcp1.Connected) mSocket.tcp1.Close();
+                    if (mSocket.tcp2.Connected) mSocket.tcp2.Close();
+                    break;
+                }
                 try {
                     byte[] result = new byte[1024];
                     int num = mSocket.tcp2.Receive(result, result.Length, SocketFlags.None);
@@ -92,5 +113,7 @@ namespace IP
     public class thSock{
         public Socket tcp1 { get; set; }
         public Socket tcp2 { get; set; }
+
+        
     }
 }
