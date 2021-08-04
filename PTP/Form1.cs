@@ -17,32 +17,27 @@ namespace IP
 
         private void button1_Click(object sender, EventArgs e)
         {
-            DuanKou.isop = false;
-            new Thread(() =>
-            {
-                new TcpClient(textBox1.Text == "0.0.0.0" ? "127.0.0.1" : textBox1.Text, int.Parse(textBox3.Text));
-            }).Start();
+            dk.stop();
+            button2.Enabled = true;
         }
 
         private void button2_Click(object sender, EventArgs e)
         {
-            DuanKou.isop = true;
-
-            dk.Run();
+            try {
+                dk = new DuanKou(textBox1.Text, int.Parse(textBox3.Text), textBox2.Text, int.Parse(textBox4.Text));
+            }
+            catch
+            {
+                return;
+            }
+            
+            bool rt = dk.restart();
+            button2.Enabled = !rt;
         }
 
         private void button3_Click(object sender, EventArgs e)
         {
             MessageBox.Show(dk.getmyThreadOn().ToString());
-        }
-
-        private void button4_Click(object sender, EventArgs e)
-        {
-            dk = new DuanKou(textBox1.Text, int.Parse(textBox3.Text), textBox2.Text, int.Parse(textBox4.Text));
-            button2.Enabled = true;
-            button1.Enabled = true;
-            button3.Enabled = true;
-            //button4.Enabled = false;
         }
     }
 
