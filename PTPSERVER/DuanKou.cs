@@ -11,7 +11,7 @@ namespace PTPSERVER
 {
     public class DuanKou
     {
-        static public volatile bool isop = true;
+        private volatile bool isop = true;
 
         SynchronizationContext syncContext = null;
         Thread myThread = null;
@@ -33,25 +33,53 @@ namespace PTPSERVER
             this.TargetIp = TargetIp;
             this.TargetPort = TargetPort;
 
-            IPAddress ip = IPAddress.Parse(localIp);
-            serverSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp); ;
-            serverSocket.Bind(new IPEndPoint(ip, localProt));
-            serverSocket.Listen(10000);
-            Console.WriteLine("启动监听{0}成功", serverSocket.LocalEndPoint.ToString());
+            //IPAddress ip = IPAddress.Parse(localIp);
+            //serverSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp); ;
+            //serverSocket.Bind(new IPEndPoint(ip, localProt));
+            //serverSocket.Listen(10000);
+            //Console.WriteLine("启动监听{0}成功", serverSocket.LocalEndPoint.ToString());
+
         }
 
-        public void Run() {
-            myThread = new Thread(Listen);
-            myThread.Start(serverSocket);
+        public void Run()
+        {
+            isop = true;
+            try
+            {
+                myThread = new Thread(Listen);
+                myThread.Start(serverSocket);
+            }
+            catch
+            {
+                isop = false; ;
+            }
+
         }
 
         private void Listen(object obj){
             Socket serverSocket = (Socket)obj;
             IPAddress ip = IPAddress.Parse(TargetIp);
             while (true){
-                Socket tcp1 = serverSocket.Accept();
+                Socket tcp1 = null;
+                try
+                {
+                    tcp1 = serverSocket.Accept();
+                }
+                catch
+                {
+                    return;
+                }
+                
                 Socket tcp2 = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-                tcp2.Connect(new IPEndPoint(ip, TargetPort));
+                try
+                {
+                    tcp2.Connect(new IPEndPoint(ip, TargetPort));
+                }
+                catch
+                {
+
+                }
+                
 
                 try
                 {
@@ -96,6 +124,9 @@ namespace PTPSERVER
                         
                         break;
                     }
+
+                    
+
                     mSocket.tcp1.Send(result, num, SocketFlags.None);
                 }
                 catch (Exception ex) {
@@ -106,6 +137,51 @@ namespace PTPSERVER
                     break;
                 }
             }
+        }
+
+        public bool stop()
+        {
+            this.isop = false;
+            try
+            {
+                new Thread(() =>
+                {
+                    try
+                    {
+                        new TcpClient(localIp == "0.0.0.0" ? "127.0.0.1" : localIp, localProt);
+                    }
+                    catch
+                    {
+
+                    }
+                    
+                }).Start();
+            }
+            catch
+            {
+                return true;
+            }
+            
+            serverSocket.Close();
+            return true;
+        }
+        public bool restart()
+        {
+            IPAddress ip = IPAddress.Parse(localIp);
+            try
+            {
+                serverSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp); ;
+                serverSocket.Bind(new IPEndPoint(ip, localProt));
+                serverSocket.Listen(10000);
+            }
+            catch
+            {
+                return false;
+            }
+            
+            Console.WriteLine("启动监听{0}成功", serverSocket.LocalEndPoint.ToString());
+            Run();
+            return true;
         }
 
     }
