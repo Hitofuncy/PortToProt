@@ -23,13 +23,8 @@ namespace IP
 
         private void button2_Click(object sender, EventArgs e)
         {
-            try {
-                dk = new DuanKou(textBox1.Text, int.Parse(textBox3.Text), textBox2.Text, int.Parse(textBox4.Text));
-            }
-            catch
-            {
-                return;
-            }
+            dk = new DuanKou(textBox1.Text, textBox3.Text, textBox2.Text, textBox4.Text);
+            if (dk.issucc == false) return;
             
             bool rt = dk.restart();
             button2.Enabled = !rt;
@@ -37,6 +32,11 @@ namespace IP
 
         private void button3_Click(object sender, EventArgs e)
         {
+            if(dk == null)
+            {
+                MessageBox.Show(false.ToString());
+                return;
+            }
             MessageBox.Show(dk.getmyThreadOn().ToString());
         }
     }

@@ -31,7 +31,7 @@ namespace PTPSERVER
             if (tx == "") tx = "file";
             
             if (args.Length < 4) Environment.Exit(0);
-            dk = new DuanKou(args[0], int.Parse(args[1]), args[2], int.Parse(args[3]));
+            dk = new DuanKou(args[0], args[1], args[2], args[3]);
             dk.restart();
         }
 

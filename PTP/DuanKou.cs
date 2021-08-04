@@ -16,9 +16,11 @@ namespace IP
         SynchronizationContext syncContext = null;
         Thread myThread = null;
         Socket serverSocket = null;
-        int i = 0;
+        public bool issucc { get; } = true;
 
-        public bool getmyThreadOn(){
+        public bool getmyThreadOn()
+        {
+            if (myThread == null) return false;
             return myThread.ThreadState == ThreadState.Running;
         }
 
@@ -26,19 +28,20 @@ namespace IP
         string localIp { get; set; }
         int TargetPort { get; set; }
         string TargetIp { get; set; }
-        public DuanKou(string localIp, int localProt, string TargetIp, int TargetPort){
-            syncContext = SynchronizationContext.Current;
-            this.localIp = localIp;
-            this.localProt = localProt;
-            this.TargetIp = TargetIp;
-            this.TargetPort = TargetPort;
-
-            //IPAddress ip = IPAddress.Parse(localIp);
-            //serverSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp); ;
-            //serverSocket.Bind(new IPEndPoint(ip, localProt));
-            //serverSocket.Listen(10000);
-            //Console.WriteLine("启动监听{0}成功", serverSocket.LocalEndPoint.ToString());
-
+        public DuanKou(string localIp, string localProt, string TargetIp, string TargetPort)
+        {
+            try
+            {
+                syncContext = SynchronizationContext.Current;
+                this.localIp = localIp;
+                this.localProt = int.Parse(localProt);
+                this.TargetIp = TargetIp;
+                this.TargetPort = int.Parse(TargetPort);
+            }
+            catch
+            {
+                issucc = false;
+            }
         }
 
         public void Run()
@@ -56,10 +59,12 @@ namespace IP
 
         }
 
-        private void Listen(object obj){
+        private void Listen(object obj)
+        {
             Socket serverSocket = (Socket)obj;
             IPAddress ip = IPAddress.Parse(TargetIp);
-            while (true){
+            while (true)
+            {
                 Socket tcp1 = null;
                 try
                 {
@@ -69,7 +74,7 @@ namespace IP
                 {
                     return;
                 }
-                
+
                 Socket tcp2 = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
                 try
                 {
@@ -79,7 +84,7 @@ namespace IP
                 {
 
                 }
-                
+
 
                 try
                 {
@@ -87,16 +92,16 @@ namespace IP
                     {
                         tcp1 = tcp2,
                         tcp2 = tcp1
-                    }) ;
+                    });
 
                     ThreadPool.QueueUserWorkItem(new WaitCallback(SwapMsg), new thSock
                     {
                         tcp1 = tcp1,
                         tcp2 = tcp2
                     });
-                    if(isop == false)
+                    if (isop == false)
                     {
-                        throw new  NotSupportedException("");
+                        throw new NotSupportedException("");
                     }
                 }
                 catch
@@ -106,34 +111,39 @@ namespace IP
             }
         }
 
-        public void SwapMsg(object obj){
+        public void SwapMsg(object obj)
+        {
             thSock mSocket = (thSock)obj;
-            while (true) {
-                if(isop == false)
+            while (true)
+            {
+                if (isop == false)
                 {
                     if (mSocket.tcp1.Connected) mSocket.tcp1.Close();
                     if (mSocket.tcp2.Connected) mSocket.tcp2.Close();
                     break;
                 }
-                try {
+                try
+                {
                     byte[] result = new byte[1024];
                     int num = mSocket.tcp2.Receive(result, result.Length, SocketFlags.None);
-                    if (num == 0) {
+                    if (num == 0)
+                    {
                         if (mSocket.tcp1.Connected) mSocket.tcp1.Close();
                         if (mSocket.tcp2.Connected) mSocket.tcp2.Close();
-                        
+
                         break;
                     }
 
-                    
+
 
                     mSocket.tcp1.Send(result, num, SocketFlags.None);
                 }
-                catch (Exception ex) {
+                catch (Exception ex)
+                {
                     Console.WriteLine(ex.Message);
                     if (mSocket.tcp1.Connected) mSocket.tcp1.Close();
                     if (mSocket.tcp2.Connected) mSocket.tcp2.Close();
-                    
+
                     break;
                 }
             }
@@ -154,15 +164,15 @@ namespace IP
                     {
 
                     }
-                    
+
                 }).Start();
             }
             catch
             {
                 return true;
             }
-            
-            serverSocket.Close();
+            if (serverSocket != null)
+                serverSocket.Close();
             return true;
         }
         public bool restart()
@@ -178,7 +188,6 @@ namespace IP
             {
                 return false;
             }
-            
             Console.WriteLine("启动监听{0}成功", serverSocket.LocalEndPoint.ToString());
             Run();
             return true;
@@ -186,10 +195,9 @@ namespace IP
 
     }
 
-    public class thSock{
+    public class thSock
+    {
         public Socket tcp1 { get; set; }
         public Socket tcp2 { get; set; }
-
-        
     }
 }
